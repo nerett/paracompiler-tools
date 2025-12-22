@@ -1,4 +1,3 @@
-
 FROM registry.opensuse.org/opensuse/leap:15.6
 
 LABEL maintainer="nerett"
