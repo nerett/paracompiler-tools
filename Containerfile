@@ -27,6 +27,7 @@ RUN zypper --non-interactive install --no-recommends \
     gcc13-c++ \
     llvm20 \
     llvm20-devel \
+    llvm20-libc++-devel \
     clang20 \
     clang20-devel \
     libLTO20
@@ -34,5 +35,4 @@ RUN zypper --non-interactive install --no-recommends \
 RUN pip3.11 install lit>=17.0.0 requests>=2.28.0 rich>=12.0.0
 
 WORKDIR /project
-
 CMD ["/bin/bash"]
