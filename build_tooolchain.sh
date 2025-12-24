@@ -31,6 +31,9 @@ echo "=== Building LLVM ==="
 cd "$LLVM_DIR"
 rm -rf build && mkdir build && cd build
 
+export CC="clang"
+export CXX="clang++"
+
 cmake -G Ninja ../llvm \
     -DCMAKE_BUILD_TYPE=Release \
     -DLLVM_ENABLE_PROJECTS="clang;lld" \
