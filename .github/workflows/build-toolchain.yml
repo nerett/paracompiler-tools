@@ -1,0 +1,43 @@
+name: Build Toolchain Binaries
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'build_toolchain.sh'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/nerett/paracompiler-tools:latest
+      credentials:
+         username: ${{ github.actor }}
+         password: ${{ secrets.GITHUB_TOKEN }}
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout tools repo
+        uses: actions/checkout@v4
+
+      - name: Build Toolchain
+        run: |
+          chmod +x ./build_toolchain.sh
+          ./build_toolchain.sh
+
+      - name: Archive Artifacts
+        run: |
+          tar -czf toolchain-llvm-antlr.tar.gz -C external/dist .
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: toolchain-build-${{ github.run_number }}
+          name: "Toolchain Build ${{ github.run_number }}"
+          files: toolchain-llvm-antlr.tar.gz
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
