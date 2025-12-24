@@ -1,30 +1,48 @@
 #!/bin/bash
 set -e
 
-ROOT_DIR="$(pwd)"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-TOOLCHAIN_ROOT="${ROOT_DIR}/../external"
-DIST_DIR="${TOOLCHAIN_ROOT}/dist"
+if [ -d "$SCRIPT_DIR/../external/llvm-project" ]; then
+    echo ">>> Detected 'repo' workspace layout."
 
-LLVM_DIR="${TOOLCHAIN_ROOT}/llvm-project/"
-ANTLR_DIR="${TOOLCHAIN_ROOT}/antlr4"
+    WORKSPACE_ROOT="$(dirname "$SCRIPT_DIR")"
+    TOOLCHAIN_ROOT="$WORKSPACE_ROOT/external"
+else
+    echo ">>> Detected standalone/CI layout."
+
+    WORKSPACE_ROOT="$(pwd)"
+    TOOLCHAIN_ROOT="$WORKSPACE_ROOT/external"
+fi
+
+DIST_DIR="$TOOLCHAIN_ROOT/dist"
+LLVM_DIR="$TOOLCHAIN_ROOT/llvm-project"
+ANTLR_DIR="$TOOLCHAIN_ROOT/antlr4"
 
 LLVM_TAG="llvmorg-22-init"
 ANTLR_TAG="4.13.1"
 
-echo "=== Building Toolchain in $ROOT_DIR ==="
-echo "=== Destination: $DIST_DIR ==="
+echo "=== Configured Paths ==="
+echo "Workspace:      $WORKSPACE_ROOT"
+echo "Toolchain Src:  $TOOLCHAIN_ROOT"
+echo "Destination:    $DIST_DIR"
+echo "========================"
 
 mkdir -p "$DIST_DIR"
+mkdir -p "$TOOLCHAIN_ROOT"
 
 if [ ! -d "$LLVM_DIR" ]; then
     echo "Cloning LLVM Project (${LLVM_TAG})..."
     git clone --depth 1 --branch "$LLVM_TAG" https://github.com/llvm/llvm-project.git "$LLVM_DIR"
+else
+    echo "LLVM source found at $LLVM_DIR (Skipping clone)"
 fi
 
 if [ ! -d "$ANTLR_DIR" ]; then
     echo "Cloning ANTLR4 (${ANTLR_TAG})..."
     git clone --depth 1 --branch "$ANTLR_TAG" https://github.com/antlr/antlr4.git "$ANTLR_DIR"
+else
+    echo "ANTLR source found at $ANTLR_DIR (Skipping clone)"
 fi
 
 echo "=== Building LLVM ==="
@@ -66,8 +84,6 @@ cmake -G Ninja ../llvm \
 
 ninja install
 
-cd "$ROOT_DIR"
-
 echo "=== Building ANTLR Runtime ==="
 cd "${ANTLR_DIR}/runtime/Cpp"
 rm -rf build && mkdir build && cd build
@@ -75,6 +91,7 @@ rm -rf build && mkdir build && cd build
 export CC="${DIST_DIR}/bin/clang"
 export CXX="${DIST_DIR}/bin/clang++"
 
+echo "Checking custom compiler version..."
 $CXX --version
 
 cmake -G Ninja .. \
