@@ -19,8 +19,10 @@ DIST_DIR="$TOOLCHAIN_ROOT/dist"
 LLVM_DIR="$TOOLCHAIN_ROOT/llvm-project"
 ANTLR_DIR="$TOOLCHAIN_ROOT/antlr4"
 
-LLVM_TAG="2e16cadd560f760f100030e575fe402f3f6b2eba"
+LLVM_TAG="master"
 ANTLR_TAG="4.13.1"
+
+LLVM_COMMIT="2e16cadd560f760f100030e575fe402f3f6b2eba"
 
 echo "=== Configured Paths ==="
 echo "Workspace:      $WORKSPACE_ROOT"
@@ -33,7 +35,7 @@ mkdir -p "$TOOLCHAIN_ROOT"
 
 if [ ! -d "$LLVM_DIR" ]; then
     echo "Cloning LLVM Project (${LLVM_TAG})..."
-    git clone --depth 1 --branch "$LLVM_TAG" https://github.com/llvm/llvm-project.git "$LLVM_DIR"
+    git clone --branch "$LLVM_TAG" https://github.com/llvm/llvm-project.git "$LLVM_DIR"
 else
     echo "LLVM source found at $LLVM_DIR (Skipping clone)"
 fi
@@ -47,6 +49,7 @@ fi
 
 echo "=== Building LLVM ==="
 cd "$LLVM_DIR"
+git checkout "$LLVM_COMMIT"
 rm -rf build && mkdir build && cd build
 
 export CC="clang"
