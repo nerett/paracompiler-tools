@@ -5,15 +5,11 @@ on:
   push:
     paths:
       - 'build_toolchain.sh'
+      - '.github/workflows/build-toolchain.yml'
 
 jobs:
   build-and-release:
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/nerett/paracompiler-tools:latest
-      credentials:
-         username: ${{ github.actor }}
-         password: ${{ secrets.GITHUB_TOKEN }}
+    runs-on: ubuntu-20.04
 
     permissions:
       contents: write
@@ -22,10 +18,25 @@ jobs:
       - name: Checkout tools repo
         uses: actions/checkout@v4
 
-      - name: Build Toolchain
+      - name: Install Build Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            ninja-build \
+            build-essential \
+            python3 \
+            git \
+            clang \
+            lld \
+            libc++-dev \
+            libc++abi-dev \
+            zlib1g-dev \
+            libxml2-dev
+
+      - name: Build Toolchain (Bootstrap)
         run: |
           chmod +x ./build_toolchain.sh
-          ./build_toolchain.sh
+          ./build_toolchain.sh --bootstrap
 
       - name: Archive Artifacts
         run: |
@@ -36,6 +47,12 @@ jobs:
         with:
           tag_name: toolchain-build-${{ github.run_number }}
           name: "Toolchain Build ${{ github.run_number }}"
+          body: |
+            LLVM/Clang 22 (Bootstrap build)
+            ANTLR 4.13.1 Runtime
+
+            Built on Ubuntu 20.04 for maximum GLIBC compatibility.
+            Statically linked libc++.
           files: toolchain-llvm-antlr.tar.gz
           draft: false
           prerelease: false

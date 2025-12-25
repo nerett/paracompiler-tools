@@ -1,6 +1,32 @@
 #!/bin/bash
 set -e
 
+ENABLE_BOOTSTRAP=false
+
+function show_help {
+    echo "Usage: $(basename "$0") [OPTIONS]"
+    echo ""
+    echo "Builds the LLVM and ANTLR toolchain."
+    echo ""
+    echo "Options:"
+    echo "  --bootstrap    Enable 2-stage Bootstrap build."
+    echo "                 Builds Clang twice. Produces a portable binary with static libc++."
+    echo "                 Recommended for creating distribution artifacts."
+    echo "  --help         Show this help message."
+    echo ""
+    echo "Default behavior: Single-stage build using the host compiler and host libc++."
+}
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --bootstrap) ENABLE_BOOTSTRAP=true ;;
+        --help|-h) show_help; exit 0 ;;
+        *) echo "Unknown parameter passed: $1"; show_help; exit 1 ;;
+    esac
+    shift
+done
+
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 if [ -d "$SCRIPT_DIR/../external/llvm-project" ]; then
@@ -55,37 +81,76 @@ rm -rf build && mkdir build && cd build
 export CC="clang"
 export CXX="clang++"
 
-cmake -G Ninja ../llvm \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DLLVM_ENABLE_PROJECTS="clang;lld" \
-    -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind" \
-    -DLLVM_TARGETS_TO_BUILD="X86" \
-    -DCMAKE_INSTALL_PREFIX="$DIST_DIR" \
-    \
-    -DCLANG_DEFAULT_CXX_STDLIB=libc++ \
-    -DCLANG_DEFAULT_RTLIB=compiler-rt \
-    -DCLANG_DEFAULT_UNWINDLIB=libunwind \
-    \
-    -DLIBCXX_USE_COMPILER_RT=YES \
-    -DLIBCXXABI_USE_COMPILER_RT=YES \
-    -DLIBCXXABI_USE_LLVM_UNWINDER=YES \
-    -DLIBUNWIND_USE_COMPILER_RT=YES \
-    \
-    -DLIBCXX_ENABLE_SHARED=OFF \
-    -DLIBCXX_ENABLE_STATIC=ON \
-    -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON \
-    -DLIBCXXABI_ENABLE_SHARED=OFF \
-    -DLIBCXXABI_ENABLE_STATIC=ON \
-    -DLIBUNWIND_ENABLE_SHARED=OFF \
-    -DLIBUNWIND_ENABLE_STATIC=ON \
-    \
-    -DLIBCXX_INSTALL_MODULES=ON \
-    \
-    -DCMAKE_CXX_FLAGS="-stdlib=libc++" \
-    -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++" \
-    -DCMAKE_SHARED_LINKER_FLAGS="-stdlib=libc++"
+if [ "$ENABLE_BOOTSTRAP" = true ]; then
+    echo "=== Using Bootstrap build method ==="
 
-ninja install
+    cmake -G Ninja ../llvm \
+        -DCMAKE_BUILD_TYPE=Release \
+        \
+        -DCLANG_ENABLE_BOOTSTRAP=ON \
+        -DCLANG_BOOTSTRAP_PASSTHROUGH="LLVM_ENABLE_PROJECTS;LLVM_ENABLE_RUNTIMES;LLVM_TARGETS_TO_BUILD;LIBCXX_ENABLE_SHARED;LIBCXX_ENABLE_STATIC;LIBCXX_ENABLE_STATIC_ABI_LIBRARY;LIBCXXABI_ENABLE_SHARED;LIBCXXABI_ENABLE_STATIC;LIBCXXABI_USE_LLVM_UNWINDER;LIBUNWIND_ENABLE_SHARED;LIBUNWIND_ENABLE_STATIC;CLANG_DEFAULT_CXX_STDLIB" \
+        \
+        -DBOOTSTRAP_CMAKE_INSTALL_PREFIX="$DIST_DIR" \
+        -DBOOTSTRAP_LLVM_STATIC_LINK_CXX_STDLIB=ON \
+        -DBOOTSTRAP_CMAKE_CXX_FLAGS="-stdlib=libc++" \
+        -DBOOTSTRAP_CMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -static-libstdc++" \
+        \
+        -DLLVM_ENABLE_PROJECTS="clang;lld" \
+        -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind;compiler-rt" \
+        -DLLVM_TARGETS_TO_BUILD="X86" \
+        \
+        -DCLANG_DEFAULT_CXX_STDLIB=libc++ \
+        \
+        -DLIBCXX_ENABLE_SHARED=OFF \
+        -DLIBCXX_ENABLE_STATIC=ON \
+        -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON \
+        -DLIBCXXABI_ENABLE_SHARED=OFF \
+        -DLIBCXXABI_ENABLE_STATIC=ON \
+        -DLIBCXXABI_USE_LLVM_UNWINDER=ON \
+        -DLIBUNWIND_ENABLE_SHARED=OFF \
+        -DLIBUNWIND_ENABLE_STATIC=ON \
+        \
+        -DLIBCXX_INSTALL_MODULES=ON \
+        \
+        -DCMAKE_INSTALL_PREFIX="$LLVM_DIR/build/stage1-install" \
+        -DLLVM_INSTALL_TOOLCHAIN_ONLY=OFF
+
+    ninja stage2-install
+else
+    echo "=== Using default (single-stage) build method ==="
+
+    cmake -G Ninja ../llvm \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DLLVM_ENABLE_PROJECTS="clang;lld" \
+        -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind" \
+        -DLLVM_TARGETS_TO_BUILD="X86" \
+        -DCMAKE_INSTALL_PREFIX="$DIST_DIR" \
+        \
+        -DCLANG_DEFAULT_CXX_STDLIB=libc++ \
+        -DCLANG_DEFAULT_RTLIB=compiler-rt \
+        -DCLANG_DEFAULT_UNWINDLIB=libunwind \
+        \
+        -DLIBCXX_USE_COMPILER_RT=YES \
+        -DLIBCXXABI_USE_COMPILER_RT=YES \
+        -DLIBCXXABI_USE_LLVM_UNWINDER=YES \
+        -DLIBUNWIND_USE_COMPILER_RT=YES \
+        \
+        -DLIBCXX_ENABLE_SHARED=OFF \
+        -DLIBCXX_ENABLE_STATIC=ON \
+        -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON \
+        -DLIBCXXABI_ENABLE_SHARED=OFF \
+        -DLIBCXXABI_ENABLE_STATIC=ON \
+        -DLIBUNWIND_ENABLE_SHARED=OFF \
+        -DLIBUNWIND_ENABLE_STATIC=ON \
+        \
+        -DLIBCXX_INSTALL_MODULES=ON \
+        \
+        -DCMAKE_CXX_FLAGS="-stdlib=libc++" \
+        -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++" \
+        -DCMAKE_SHARED_LINKER_FLAGS="-stdlib=libc++"
+
+    ninja install
+fi
 
 echo "=== Building ANTLR Runtime ==="
 cd "${ANTLR_DIR}/runtime/Cpp"
