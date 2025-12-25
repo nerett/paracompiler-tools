@@ -12,6 +12,7 @@ RUN zypper --non-interactive refresh && \
     python311-pip \
     java-11-openjdk-headless \
     which \
+    sudo
 
 RUN zypper ar --refresh https://download.opensuse.org/repositories/devel:/tools:/building/15.6/ devel_tools_building && \
     zypper ar --refresh https://download.opensuse.org/repositories/devel:/tools:/compiler/15.6/ devel_tools_compiler && \
