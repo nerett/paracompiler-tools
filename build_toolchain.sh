@@ -19,7 +19,7 @@ DIST_DIR="$TOOLCHAIN_ROOT/dist"
 LLVM_DIR="$TOOLCHAIN_ROOT/llvm-project"
 ANTLR_DIR="$TOOLCHAIN_ROOT/antlr4"
 
-LLVM_TAG="llvmorg-22-init"
+LLVM_TAG="2e16cadd560f760f100030e575fe402f3f6b2eba"
 ANTLR_TAG="4.13.1"
 
 echo "=== Configured Paths ==="
