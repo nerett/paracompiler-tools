@@ -1,0 +1,40 @@
+FROM registry.opensuse.org/opensuse/leap:15.6
+
+LABEL maintainer="nerett"
+
+RUN zypper --non-interactive refresh && \
+    zypper --non-interactive install \
+    curl \
+    git \
+    gzip \
+    tar \
+    python311 \
+    python311-pip \
+    java-11-openjdk-headless \
+    which \
+
+RUN zypper ar --refresh https://download.opensuse.org/repositories/devel:/tools:/building/15.6/ devel_tools_building && \
+    zypper ar --refresh https://download.opensuse.org/repositories/devel:/tools:/compiler/15.6/ devel_tools_compiler && \
+    zypper --non-interactive --gpg-auto-import-keys refresh
+
+RUN zypper --non-interactive install --no-recommends \
+    cmake \
+    ninja \
+    make \
+    binutils
+
+RUN pip3.11 install lit>=17.0.0
+
+COPY toolchain-llvm-antlr.tar.gz /tmp/toolchain.tar.gz
+
+RUN mkdir -p /opt/paracl-toolchain && \
+    tar -xzf /tmp/toolchain.tar.gz -C /opt/paracl-toolchain && \
+    rm /tmp/toolchain.tar.gz
+
+ENV PATH="/opt/paracl-toolchain/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/opt/paracl-toolchain/lib:${LD_LIBRARY_PATH}"
+ENV CC="/opt/paracl-toolchain/bin/clang"
+ENV CXX="/opt/paracl-toolchain/bin/clang++"
+
+WORKDIR /project
+CMD ["/bin/bash"]
