@@ -2,10 +2,6 @@ name: Build Toolchain Binaries
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'build_toolchain.sh'
-      - '.github/workflows/build-toolchain.yml'
 
 jobs:
   build-and-release:
