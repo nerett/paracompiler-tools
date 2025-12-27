@@ -29,6 +29,10 @@ jobs:
             zlib1g-dev \
             libxml2-dev
 
+          wget https://github.com/Kitware/CMake/releases/download/v3.30.0/cmake-3.30.0-linux-x86_64.sh
+          chmod +x cmake-3.30.0-linux-x86_64.sh
+          sudo ./cmake-3.30.0-linux-x86_64.sh --skip-license --prefix=/usr/local
+
       - name: Build Toolchain (Bootstrap)
         run: |
           chmod +x ./build_toolchain.sh
