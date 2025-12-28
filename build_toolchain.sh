@@ -29,17 +29,8 @@ done
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-if [ -d "$SCRIPT_DIR/../external/llvm-project" ]; then
-    echo ">>> Detected 'repo' workspace layout."
-
-    WORKSPACE_ROOT="$(dirname "$SCRIPT_DIR")"
-    TOOLCHAIN_ROOT="$WORKSPACE_ROOT/external"
-else
-    echo ">>> Detected standalone/CI layout."
-
-    WORKSPACE_ROOT="$(pwd)"
-    TOOLCHAIN_ROOT="$WORKSPACE_ROOT/external"
-fi
+WORKSPACE_ROOT="$(dirname "$SCRIPT_DIR")"
+TOOLCHAIN_ROOT="$WORKSPACE_ROOT/external"
 
 DIST_DIR="$TOOLCHAIN_ROOT/dist"
 LLVM_DIR="$TOOLCHAIN_ROOT/llvm-project"
@@ -47,17 +38,17 @@ ANTLR_DIR="$TOOLCHAIN_ROOT/antlr4"
 
 LLVM_TAG="main"
 ANTLR_TAG="4.13.1"
-
 LLVM_COMMIT="2e16cadd560f760f100030e575fe402f3f6b2eba"
 
 echo "=== Configured Paths ==="
-echo "Workspace:      $WORKSPACE_ROOT"
-echo "Toolchain Src:  $TOOLCHAIN_ROOT"
+echo "Script Dir:     $SCRIPT_DIR"
+echo "Workspace Root: $WORKSPACE_ROOT"
+echo "Toolchain Root: $TOOLCHAIN_ROOT"
 echo "Destination:    $DIST_DIR"
 echo "========================"
 
-mkdir -p "$DIST_DIR"
 mkdir -p "$TOOLCHAIN_ROOT"
+mkdir -p "$DIST_DIR"
 
 if [ ! -d "$LLVM_DIR" ]; then
     echo "Cloning LLVM Project (${LLVM_TAG})..."
@@ -94,7 +85,6 @@ if [ "$ENABLE_BOOTSTRAP" = true ]; then
         -DBOOTSTRAP_LLVM_STATIC_LINK_CXX_STDLIB=ON \
         -DBOOTSTRAP_CMAKE_CXX_FLAGS="-stdlib=libc++" \
         -DBOOTSTRAP_CMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -static-libstdc++" \
-        \
         -DBOOTSTRAP_LLVM_INSTALL_UTILS=ON \
         \
         -DLLVM_ENABLE_PROJECTS="clang;lld" \

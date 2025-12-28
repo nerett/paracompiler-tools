@@ -40,7 +40,7 @@ jobs:
 
       - name: Archive Artifacts
         run: |
-          tar -czf toolchain-llvm-antlr.tar.gz -C external/dist .
+          tar -czf toolchain-llvm-antlr.tar.gz -C ../external/dist .
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
