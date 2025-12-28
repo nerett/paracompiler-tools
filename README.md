@@ -31,6 +31,26 @@ make shell-ci
 
 This will drop you into a shell inside the container with all paths (`CC`, `CXX`, `CMAKE_PREFIX_PATH`, path to project) pre-configured.
 
+## Requirements & Building from Source
+To run containers you need `docker` or `podman` to be installed and `make` for `Makefile`-based interface.
+
+Toolchain requires your system to have `glibc-2.31+` (for `ubuntu-20.04`-based builds). If you have an older system, consider building toolchain from source or use our container images.
+
+If you decided to build toolchain from source, you have 2 options: single-stage build and bootstrap build.
+Bootstrap build is preferable, because it requires less preliminary setup and produces more portable binaries (`libc++` is linked statically). You will need:
+- `make`
+- `cmake`
+- `ninja`
+- `clang++` (recommended) or `g++`
+- `libc++` or `libstdc++`
+- `lld`
+- `zlib` (optional)
+- `libxml` (optional)
+
+If you're on Ubuntu, check corresponding ci `buil-toolchain.yml` file.
+
+Single-stage build is ~2 times faster, but will require you to set up LLVM environment properly. You will absoulutely need `libc++`. Here you can go with our `paracompiler-tools` container.
+
 ## Toolchain Management
 We use a custom build of LLVM (derived from tested commit of the `master` branch) and ANTLR 4.13.1.
 
@@ -52,8 +72,10 @@ The `Makefile` provides an interface for managing OCI-compliant containers (Dock
 
 | Target | Description |
 | :--- | :--- |
-| `make shell-ci` | Pulls the production CI image from GHCR. Contains the custom LLVM toolchain. Identical to the GitHub Actions environment. |
-| `make shell-dev` | Pulls/Builds a "clean" OpenSUSE image with system + development packages only. Useful for testing compatibility with system package managers. |
+| `make pull-ci` | Pulls the production CI image from GHCR. Contains the custom LLVM toolchain. Identical to the GitHub Actions environment. |
+| `make pull-dev` | Pulls a "clean" OpenSUSE Leap 15.6 image with system + development packages only. Useful for testing compatibility with system package managers. |
+| `make shell-ci/-dev` | Opens shell inside a container, mouts project directory. |
+| `make build-img-ci/-dev` | Build container image (and toolchain for `-ci` if necessary) from source. |
 | `make check` | Runs the full configuration, build, and test cycle for ParaCL inside the CI container. |
 
 ## CI/CD Pipeline
