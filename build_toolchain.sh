@@ -97,7 +97,7 @@ if [ "$ENABLE_BOOTSTRAP" = true ]; then
         \
         -DBOOTSTRAP_LLVM_INSTALL_UTILS=ON \
         \
-        -DLLVM_ENABLE_PROJECTS="clang;lld" \
+        -DLLVM_ENABLE_PROJECTS="clang;lld;clang-tools-extra" \
         -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind;compiler-rt" \
         -DLLVM_TARGETS_TO_BUILD="X86" \
         \
@@ -123,7 +123,7 @@ else
 
     cmake -G Ninja ../llvm \
         -DCMAKE_BUILD_TYPE=Release \
-        -DLLVM_ENABLE_PROJECTS="clang;lld" \
+        -DLLVM_ENABLE_PROJECTS="clang;lld;clang-tools-extra" \
         -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind" \
         -DLLVM_TARGETS_TO_BUILD="X86" \
         -DCMAKE_INSTALL_PREFIX="$DIST_DIR" \
